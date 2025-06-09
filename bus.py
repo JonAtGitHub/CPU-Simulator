@@ -21,7 +21,6 @@ class Bus():
     def _reset(self):
         self._contents = 255
         self._written = False
-        #self._logger.debug("reset")
 
     def read_from(self):
         if not self._written: self._logger.error("READING FROM EMPTY BUS")

@@ -59,18 +59,6 @@ pc = ProgramCounter()
 
 #***************************************
 
-class InstructionRegister(Register):
-
-    def __init__(self):
-        super().__init__({
-            microcode.IN_I: self._bus_read,
-            })
-        self._logger = logging.getLogger(self.__class__.__name__)
-
-inr = InstructionRegister()
-
-#***************************************
-
 class MemoryAddressRegister(Register):
 
     def __init__(self,):
@@ -107,6 +95,18 @@ class Memory(Register):
         self._logger.debug("ram[{0:02x}] <- {1:02x}".format(address, self._contents))
 
 mem = Memory()
+
+#***************************************
+
+class InstructionRegister(Register):
+
+    def __init__(self):
+        super().__init__({
+            microcode.IN_I: self._bus_read,
+            })
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+inr = InstructionRegister()
 
 #***************************************
 

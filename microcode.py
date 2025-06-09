@@ -24,7 +24,6 @@ opcodes = {
  }
 
 # control signals
-# output ordered before input to make simpy-based simulator less complex
 # outputs
 A_O   = int("00001", 16) # A register in
 ALU_A = int("00002", 16) # ALU add+out
