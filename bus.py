@@ -1,11 +1,14 @@
 
-import logging, simpy
+import logging
+
+from env import env
+from clock import clock
 
 # the bus does not need a clock - it is used to help detect contention
 
 class Bus():
 
-    def __init__(self, env, clock):
+    def __init__(self):
         self._env = env
         self._clock = clock
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -30,3 +33,5 @@ class Bus():
         if self._written: self._logger.error("BUS CONTENTION")
         self._contents = contents & 255
         self._written = True
+
+bus = Bus()

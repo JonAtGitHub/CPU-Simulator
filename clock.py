@@ -1,9 +1,11 @@
 
-import logging, simpy
+import logging
+
+from env import env
 
 class Clock():
 
-    def __init__(self, env):
+    def __init__(self):
         self._env = env
         self._logger = logging.getLogger(self.__class__.__name__)
         self._clock1 = env.event()
@@ -26,3 +28,5 @@ class Clock():
 
     def clock2(self):
         return self._clock2
+
+clock = Clock()

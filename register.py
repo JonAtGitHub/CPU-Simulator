@@ -1,12 +1,16 @@
 
-import logging, simpy
+import logging
 
-from controller import Controller
+from env import env
+from clock import clock
+from bus import bus
+from controller import controller
+
 import microcode
 
 class Register:
 
-    def __init__(self, env, clock, bus, control_masks = {}):
+    def __init__(self, control_masks = {}):
         self._env = env
         self._clock = clock
         self._bus = bus
@@ -19,7 +23,7 @@ class Register:
         while True:
             yield self._clock.clock2()
             for mask in self._control_masks:
-                if Controller.is_control_set(mask):
+                if controller.is_control_set(mask):
                     self._control_masks[mask]()
                     break
     
@@ -41,8 +45,8 @@ class Register:
 
 class ProgramCounter(Register):
 
-    def __init__(self, env, clock, bus):
-        super().__init__(env, clock, bus, {
+    def __init__(self):
+        super().__init__({
             microcode.PC_I: self._bus_read,
             microcode.PC_O: self._bus_write,
             microcode.PC_E: self._increment,
@@ -54,41 +58,46 @@ class ProgramCounter(Register):
         self._contents = (self._contents + 1) % 256
         self._logger.debug("INCR {0} (0x{0:x})".format(self._contents))
 
+pc = ProgramCounter()
+
 #***************************************
 
 class InstructionRegister(Register):
 
-    def __init__(self, env, clock, bus):
-        super().__init__(env, clock, bus, {
+    def __init__(self):
+        super().__init__({
             microcode.IN_I: self._bus_read,
             })
         self._logger = logging.getLogger(self.__class__.__name__)
+
+inr = InstructionRegister()
 
 #***************************************
 
 class MemoryAddressRegister(Register):
 
-    def __init__(self, env, clock, bus):
-        super().__init__(env, clock, bus, {
+    def __init__(self,):
+        super().__init__({
             microcode.MAR_I: self._bus_read,
             })
         self._logger = logging.getLogger(self.__class__.__name__)
+
+mar = MemoryAddressRegister()
 
 #***************************************
 
 class Memory(Register):
 
-    def __init__(self, env, clock, bus, mar):
-        super().__init__(env, clock, bus, {
+    def __init__(self):
+        super().__init__({
             microcode.RAM_I: self._mem_write,
             microcode.RAM_O: self._mem_read,
             })
-        self._mar = mar
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def _mem_read(self):
         # todo
-        address = self._mar.contents()
+        address = mar.contents()
         self._contents = 0 # = ram[address]
         self._logger.debug("ram[{0:02x}] -> {1:02x}".format(address, self._contents))
         super()._bus_write()
@@ -96,48 +105,52 @@ class Memory(Register):
     def _mem_write(self):
         # todo
         self._contents = super()._bus_read()
-        address = self._mar.contents()
+        address = mar.contents()
         # ram[address] = self._contents
         self._logger.debug("ram[{0:02x}] <- {1:02x}".format(address, self._contents))
+
+mem = Memory()
 
 #***************************************
 
 class A_Register(Register):
 
-    def __init__(self, env, clock, bus):
-        super().__init__(env, clock, bus, {
+    def __init__(self):
+        super().__init__({
             microcode.A_I: self._bus_read,
             microcode.A_O: self._bus_write,
             })
         self._logger = logging.getLogger(self.__class__.__name__)
 
+a_reg = A_Register()
+
 #***************************************
 
 class B_Register(Register):
 
-    def __init__(self, env, clock, bus):
-        super().__init__(env, clock, bus, {
+    def __init__(self):
+        super().__init__({
             microcode.B_I: self._bus_read,
             microcode.B_O: self._bus_write,
             })
         self._logger = logging.getLogger(self.__class__.__name__)
 
+b_reg = B_Register()
+
 #***************************************
 
 class ALU(Register):
 
-    def __init__(self, env, clock, bus, a_reg, b_reg):
-        super().__init__(env, clock, bus, {
+    def __init__(self):
+        super().__init__({
             microcode.ALU_A: self._add,
             microcode.ALU_S: self._subtract,
         })
-        self._a_reg = a_reg
-        self._b_reg = b_reg
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def _add(self):
-        a = self._a_reg.contents()
-        b = self._b_reg.contents()
+        a = a_reg.contents()
+        b = b_reg.contents()
         c = a + b
         self._contents = c % 256
         self._carry = c > 255
@@ -145,8 +158,8 @@ class ALU(Register):
         self._bus_write()
 
     def _subtract(self):
-        a = self._a_reg.contents()
-        b = self._b_reg.contents()
+        a = a_reg.contents()
+        b = b_reg.contents()
         r = a - b
         if r >= 0:
             self._contents = r
@@ -165,3 +178,4 @@ class ALU(Register):
         if self._zero: return 1
         return 0
 
+alu = ALU()

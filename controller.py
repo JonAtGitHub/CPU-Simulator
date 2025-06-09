@@ -1,14 +1,17 @@
 
-import logging, simpy
+import logging
 
 import microcode
+
+from env import env
+from clock import clock
 
 class Controller:
 
     _control = 0
     _mc_rom = microcode.gen_rom()
 
-    def __init__(self, env, clock):
+    def __init__(self):
         self._env = env
         self._clock = clock
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -36,3 +39,5 @@ class Controller:
     @staticmethod
     def is_control_set(mask):
         return Controller._control & mask == mask
+
+controller = Controller()
