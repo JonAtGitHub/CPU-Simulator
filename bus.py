@@ -9,15 +9,13 @@ from clock import clock
 class Bus():
 
     def __init__(self):
-        self._env = env
-        self._clock = clock
         self._logger = logging.getLogger(self.__class__.__name__)
         self._reset()
         self._action = env.process(self._run())
 
     def _run(self):
         while True:
-            yield self._clock.clock1()
+            yield clock.clock1()
             self._reset()
 
     def _reset(self):

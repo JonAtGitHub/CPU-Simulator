@@ -12,15 +12,13 @@ class Controller:
     _mc_rom = microcode.gen_rom()
 
     def __init__(self):
-        self._env = env
-        self._clock = clock
         self._logger = logging.getLogger(self.__class__.__name__)
         self._reset()
         self._action = env.process(self._run())
 
     def _run(self):
         while True:
-            yield self._clock.clock1()
+            yield clock.clock1()
             self._step = (self._step + 1) % microcode.NSTEPS
             self._opcode = microcode.NOP # instruction_register >> 4
             mc_rom_address = (self._opcode << 4) + (self._flag << 3) + self._step

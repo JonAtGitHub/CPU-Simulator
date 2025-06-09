@@ -11,9 +11,6 @@ import microcode
 class Register:
 
     def __init__(self, control_masks = {}):
-        self._env = env
-        self._clock = clock
-        self._bus = bus
         self._control_masks = control_masks
         self._reset()
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -21,19 +18,19 @@ class Register:
 
     def _run(self):
         while True:
-            yield self._clock.clock2()
+            yield clock.clock2()
             for mask in self._control_masks:
                 if controller.is_control_set(mask):
                     self._control_masks[mask]()
                     break
     
     def _bus_read(self):
-        self._contents = self._bus.read_from()
+        self._contents = bus.read_from()
         self._logger.debug("IN {0} (0x{0:x})".format(self._contents))
 
     def _bus_write(self):
         self._logger.debug("OUT {0} (0x{0:x})".format(self._contents))
-        self._bus.write_to(self._contents)
+        bus.write_to(self._contents)
 
     def _reset(self):
         self._contents = 0
