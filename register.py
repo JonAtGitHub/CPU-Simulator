@@ -4,26 +4,53 @@ import logging
 from env import env
 from clock import clock
 from bus import bus
-from controller import controller
+from memory import ram
 
 import microcode
+
+#***************************************
+
+class RegisterCoordinator:
+
+    def __init__(self):
+        self._inputs = {}
+        self._outputs = {}
+        self._others = {}
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self._action = env.process(self._run())
+    
+    def _run(self):
+        while True:
+            yield clock.clock2()
+            # outputs before inputs
+            for mask in self._outputs:
+                if microcode.is_control_set(mask):
+                    self._outputs[mask].run(mask)
+            for mask in self._inputs:
+                if microcode.is_control_set(mask):
+                    self._inputs[mask].run(mask)
+            for mask in self._others:
+                if microcode.is_control_set(mask):
+                    self._others[mask].run(mask)
+
+    def register(self, the_register, control_masks):
+        for k in control_masks:
+            if microcode.is_input(k): self._inputs[k] = the_register
+            elif microcode.is_output(k): self._outputs[k] = the_register
+            else: self._others[k] = the_register
+
+coord = RegisterCoordinator()
+
+#***************************************
 
 class Register:
 
     def __init__(self, control_masks = {}):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self._control_masks = control_masks
         self._reset()
-        self._logger = logging.getLogger(self.__class__.__name__)
-        self._action = env.process(self._run())
+        coord.register(self, control_masks.keys())
 
-    def _run(self):
-        while True:
-            yield clock.clock2()
-            for mask in self._control_masks:
-                if controller.is_control_set(mask):
-                    self._control_masks[mask]()
-                    break
-    
     def _bus_read(self):
         self._contents = bus.read_from()
         self._logger.debug("IN {0} (0x{0:x})".format(self._contents))
@@ -38,6 +65,9 @@ class Register:
     def contents(self):
         return self._contents
 
+    def run(self, mask):
+        self._control_masks[mask]()
+    
 #***************************************
 
 class ProgramCounter(Register):
@@ -49,7 +79,7 @@ class ProgramCounter(Register):
             microcode.PC_E: self._increment,
             })
         self._logger = logging.getLogger(self.__class__.__name__)
-        self._contents = 37
+        self._contents = 0
         
     def _increment(self):
         self._contents = (self._contents + 1) % 256
@@ -81,17 +111,15 @@ class Memory(Register):
         self._logger = logging.getLogger(self.__class__.__name__)
 
     def _mem_read(self):
-        # todo
         address = mar.contents()
-        self._contents = 0 # = ram[address]
+        self._contents = ram[address]
         self._logger.debug("ram[{0:02x}] -> {1:02x}".format(address, self._contents))
-        super()._bus_write()
+        self._bus_write()
 
     def _mem_write(self):
-        # todo
-        self._contents = super()._bus_read()
+        self._bus_read()
         address = mar.contents()
-        # ram[address] = self._contents
+        ram[address] = self._contents
         self._logger.debug("ram[{0:02x}] <- {1:02x}".format(address, self._contents))
 
 mem = Memory()
@@ -176,3 +204,16 @@ class ALU(Register):
         return 0
 
 alu = ALU()
+
+#***************************************
+
+class OutputRegister(Register):
+
+    def __init__(self):
+        super().__init__({
+            microcode.OUT_I: self._bus_read,
+            })
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+out_reg = OutputRegister()
+

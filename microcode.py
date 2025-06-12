@@ -1,14 +1,14 @@
 
-NOP = int('0', 16)
-LDA = int('1', 16)
-ADD = int('2', 16)
-SUB = int('3', 16)
-STA = int('4', 16)
-JMP = int('5', 16)
-OUT = int('6', 16)
-HLT = int('7', 16)
-JC  = int('8', 16)
-JZ  = int('9', 16)
+NOP = int('00', 16)
+LDA = int('10', 16)
+ADD = int('20', 16)
+SUB = int('30', 16)
+STA = int('40', 16)
+JMP = int('50', 16)
+OUT = int('60', 16)
+HLT = int('70', 16)
+JC  = int('80', 16)
+JZ  = int('90', 16)
 
 opcodes = {
     NOP: "NOP",
@@ -47,6 +47,9 @@ PC_E  = int("10000", 16) # PC increment
 HALT  = int("20000", 16) # halt
 EXIT  = int("80000", 16) # microcode instruction finished
 
+INPUT_MASKS = [A_I, B_I, FLG_I, IN_I, MAR_I, OUT_I, PC_I, RAM_I]
+OUTPUT_MASKS = [A_O, ALU_A, ALU_S, B_O, FC_O, FZ_O, PC_O, RAM_O]
+
 controls = {
     A_I:   "A_I",
     A_O:   "A_O",
@@ -68,6 +71,17 @@ controls = {
     RAM_I: "RAM_I",
     RAM_O: "RAM_O",
 }
+
+current_control = 0
+
+def is_input(mask):
+    return mask in INPUT_MASKS
+
+def is_output(mask):
+    return mask in OUTPUT_MASKS
+
+def is_control_set(mask):
+    return current_control & mask == mask
 
 FETCH = [
     PC_O+MAR_I,
@@ -166,7 +180,7 @@ def dump_microcode_details(opcode, flag, steps=None, count=1):
         control_occurrences[s] += count
         step_rep = "0x{0:05x}".format(s)
         step_str = generate_control_string(s)
-        print(" {0:04b}   {1}   {2:03b} {3} {4}".format(opcode, flag, step, step_rep, step_str))
+        print(" {0:04b}   {1}   {2:03b} {3} {4}".format(opcode>>4, flag, step, step_rep, step_str))
 
 def dump_microcode(opcode):
     print("OPCODE FLG STEP CONTROLS")
