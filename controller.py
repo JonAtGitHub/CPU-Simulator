@@ -27,6 +27,14 @@ class Controller:
             step_rep = "0x{0:05x}".format(self._control)
             step_str = microcode.generate_control_string(self._control)
             self._logger.debug("{0:04b} {1} {2:03b} {3} {4}".format(self._opcode, self._flag, self._step, step_rep, step_str))
+            # special logic to use flags for JC and JZ
+            flags = flag_reg.contents()
+            if self._control & microcode.FC_O != 0 and flags & microcode.CARRY != 0:
+                self._flag = 1
+            elif self._control & microcode.FZ_O != 0 and flags & microcode.ZERO != 0:
+                self._flag = 1
+            else:
+                self._flag = 0
             if self._control == microcode.EXIT: self._step = -1
             if self._control == microcode.HALT: break
         clock.halt()
