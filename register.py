@@ -3,7 +3,7 @@ import logging
 
 from env import env
 from clock import clock
-from bus import bus
+from bus import data_bus, control_bus, flag_bus
 from memory import ram
 
 import microcode
@@ -24,13 +24,13 @@ class RegisterCoordinator:
             yield clock.clock2()
             # outputs before inputs
             for mask in self._outputs:
-                if microcode.is_control_set(mask):
+                if control_bus.is_control_set(mask):
                     self._outputs[mask].run(mask)
             for mask in self._inputs:
-                if microcode.is_control_set(mask):
+                if control_bus.is_control_set(mask):
                     self._inputs[mask].run(mask)
             for mask in self._others:
-                if microcode.is_control_set(mask):
+                if control_bus.is_control_set(mask):
                     self._others[mask].run(mask)
 
     def register(self, the_register, control_masks):
@@ -52,12 +52,12 @@ class Register:
         coord.register(self, control_masks.keys())
 
     def _bus_read(self):
-        self._contents = bus.read_from()
+        self._contents = data_bus.read_from()
         self._logger.debug("IN {0} (0x{0:x})".format(self._contents))
 
     def _bus_write(self):
         self._logger.debug("OUT {0} (0x{0:x})".format(self._contents))
-        bus.write_to(self._contents)
+        data_bus.write_to(self._contents)
 
     def _reset(self):
         self._contents = 0
@@ -181,6 +181,14 @@ class ALU(Register):
         self._carry = c > 255
         self._zero = self._contents == 0
         self._bus_write()
+        self._set_flags()
+
+    def _set_flags(self):
+        mask = microcode.CARRY | microcode.ZERO
+        value = 0
+        if self._carry: value |= microcode.CARRY
+        if self._zero: value |= microcode.ZERO
+        flag_bus.set_bits(mask, value)
 
     def _subtract(self):
         a = a_reg.contents()
@@ -194,14 +202,7 @@ class ALU(Register):
             self._carry = True
         self._zero = self._contents == 0
         self._bus_write()
-
-    def carry(self):
-        if self._carry: return 1
-        return 0
-    
-    def zero(self):
-        if self._zero: return 1
-        return 0
+        self._set_flags()
 
 alu = ALU()
 
@@ -216,4 +217,20 @@ class OutputRegister(Register):
         self._logger = logging.getLogger(self.__class__.__name__)
 
 out_reg = OutputRegister()
+
+#***************************************
+
+class FlagRegister(Register):
+
+    def __init__(self):
+        super().__init__({
+            microcode.FLG_I: self._flag_bus_read,
+            })
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+    def _flag_bus_read(self):
+        self._contents = flag_bus.contents
+        self._logger.debug("IN {0} (0x{0:x}) {1}".format(self._contents, microcode.generate_flag_string(self._contents)))
+
+flag_reg = FlagRegister()
 

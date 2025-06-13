@@ -5,7 +5,8 @@ import microcode
 
 from env import env
 from clock import clock
-from register import inr
+from register import inr, flag_reg
+from bus import control_bus
 
 class Controller:
 
@@ -22,7 +23,7 @@ class Controller:
             self._step = (self._step + 1) % microcode.NSTEPS
             self._opcode = inr.contents() >> 4
             mc_rom_address = (self._opcode << 4) + (self._flag << 3) + self._step
-            self._control = microcode.current_control = Controller._mc_rom[mc_rom_address]
+            self._control = control_bus.contents = Controller._mc_rom[mc_rom_address]
             step_rep = "0x{0:05x}".format(self._control)
             step_str = microcode.generate_control_string(self._control)
             self._logger.debug("{0:04b} {1} {2:03b} {3} {4}".format(self._opcode, self._flag, self._step, step_rep, step_str))

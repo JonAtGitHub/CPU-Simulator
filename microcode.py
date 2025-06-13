@@ -72,16 +72,26 @@ controls = {
     RAM_O: "RAM_O",
 }
 
-current_control = 0
-
 def is_input(mask):
     return mask in INPUT_MASKS
 
 def is_output(mask):
     return mask in OUTPUT_MASKS
 
-def is_control_set(mask):
-    return current_control & mask == mask
+CARRY = int("01", 16)
+ZERO = int("02", 16)
+
+flags = {
+    CARRY: "C",
+    ZERO:  "Z"
+}
+
+def generate_flag_string(bits):
+    r = ""
+    for flag in flags:
+        if bits & flag: r = flags[flag] + r
+        else: r = flags[flag].lower() + r
+    return r
 
 FETCH = [
     PC_O+MAR_I,
