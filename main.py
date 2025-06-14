@@ -13,7 +13,7 @@ import microcode
 def main():
     #microcode.dump_all()
     logging.basicConfig(filename='CPUSim.log', level=logging.DEBUG)
-    env.run(until=1500)
+    env.run(controller.controller.halt())
 
 if __name__ == "__main__":
     main()
