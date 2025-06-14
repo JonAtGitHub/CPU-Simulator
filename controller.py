@@ -45,7 +45,6 @@ class Controller:
             if self._control == microcode.HALT:
                 self._halt.succeed()
                 break
-        clock.halt()
 
     def halt(self):
         return self._halt

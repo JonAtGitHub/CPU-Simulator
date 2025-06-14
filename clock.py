@@ -29,7 +29,4 @@ class Clock():
     def clock2(self):
         return self._clock2
 
-    def halt(self):
-        self._halt = True
-        
 clock = Clock()
