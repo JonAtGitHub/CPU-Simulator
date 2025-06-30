@@ -7,3 +7,4 @@ Inspired by Ben Eater's "8-bit CPU from scratch" with the following tweaks:
   microcode address bits)
 * Control signals and CPU flags each have their own "bus"
 * The instruction register never writes to the data bus
+* Added EXIT microcode instruction to force the end of opcode processing
